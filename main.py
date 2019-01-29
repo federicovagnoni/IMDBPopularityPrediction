@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+
 np.random.seed(12345)
 import tensorflow as tf
 
@@ -7,7 +8,9 @@ credits = pd.read_csv("dataset/tmdb_5000_credits.csv")
 movies = pd.read_csv("dataset/tmdb_5000_movies.csv")
 
 # Remove all nominal features
-movies = movies.drop(["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview", "production_companies", "production_countries", "spoken_languages", "status", "tagline", "title", "release_date"], axis=1)
+movies = movies.drop(
+    ["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview", "production_companies",
+     "production_countries", "spoken_languages", "status", "tagline", "title", "release_date"], axis=1)
 
 # Get popularity values and remove them from the dataset
 y = movies["popularity"]
@@ -15,7 +18,7 @@ movies = movies.drop(["popularity"], axis=1)
 
 # Select the random indexes for the test set and
 arr = np.arange(movies.shape[0])
-index_test = np.random.choice(arr, int(0.25*movies.shape[0]), replace=False)
+index_test = np.random.choice(arr, int(0.25 * movies.shape[0]), replace=False)
 index_train = np.setdiff1d(arr, index_test)
 
 # Substitue NaN values with 0 #TODO it can be changed!
@@ -28,14 +31,13 @@ y_test = y.loc[index_test]
 x_train = movies.loc[index_train]
 y_train = y.loc[index_train]
 
-# Scale train and test set between 0 and 1 using the max and min values for each attribute
-# the values for each attribute are retrieved form the training set and these values will be used on the test set too
-# (e.g. we do not use the max and min value that the attributes of the test set will have, but we will use the ones from the training)
+# Scale train and test set between 0 and 1 using the max and min values for each attribute the values for each
+# attribute are retrieved form the training set and these values will be used on the test set too (e.g. we do not use
+#  the max and min value that the attributes of the test set will have, but we will use the ones from the training)
 xmins = x_train.min()
 xmaxs = x_train.max()
 ymins = y_train.min()
 ymaxs = y_train.max()
-
 
 x_train -= xmins
 x_train /= xmaxs
@@ -48,7 +50,6 @@ y_train /= ymaxs
 
 y_test -= ymins
 y_test /= ymaxs
-
 
 print(x_train)
 
