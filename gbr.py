@@ -8,7 +8,8 @@ from sklearn.model_selection import cross_val_score
 # #############################################################################
 # Load data
 credits = pd.read_csv("dataset/tmdb_5000_credits.csv")
-movies = pd.read_csv("dataset/tmdb_5000_movies.csv")
+#movies = pd.read_csv("dataset/tmdb_5000_movies.csv")
+movies = pd.read_csv("dataset/movies_companies20.csv")
 
 # Remove all nominal features
 movies = movies.drop(
@@ -18,6 +19,7 @@ movies = movies.drop(
 # Get popularity values and remove them from the dataset
 y = movies["popularity"]
 movies = movies.drop(["popularity"], axis=1)
+print(movies.columns)
 
 # Select the random indexes for the test set and
 arr = np.arange(movies.shape[0])
@@ -34,22 +36,22 @@ y_test = y.loc[index_test]
 x_train = movies.loc[index_train]
 y_train = y.loc[index_train]
 
-xmins = x_train.min()
-xmaxs = x_train.max()
-ymins = y_train.min()
-ymaxs = y_train.max()
-
-x_train -= xmins
-x_train /= xmaxs
-
-x_test -= xmins
-x_test /= xmaxs
-
-y_train -= ymins
-y_train /= ymaxs
-
-y_test -= ymins
-y_test /= ymaxs
+# xmins = x_train.min()
+# xmaxs = x_train.max()
+# ymins = y_train.min()
+# ymaxs = y_train.max()
+#
+# x_train -= xmins
+# x_train /= xmaxs
+#
+# x_test -= xmins
+# x_test /= xmaxs
+#
+# y_train -= ymins
+# y_train /= ymaxs
+#
+# y_test -= ymins
+# y_test /= ymaxs
 
 # #############################################################################
 # Fit regression model
@@ -106,16 +108,16 @@ plt.show()
 
 movies = movies.fillna(0)
 
-movies_min = movies.min()
-movies_max = movies.max()
-y_min = y.min()
-y_max = y.max()
-
-movies -= movies_min
-movies /= movies_max
-
-y -= y_min
-y /= y_max
+# movies_min = movies.min()
+# movies_max = movies.max()
+# y_min = y.min()
+# y_max = y.max()
+#
+# movies -= movies_min
+# movies /= movies_max
+#
+# y -= y_min
+# y /= y_max
 
 params = {'n_estimators': 200, 'max_depth': 4, 'min_samples_split': 2,
           'learning_rate': 0.01, 'loss': 'ls'}
