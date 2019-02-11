@@ -1,19 +1,20 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 np.random.seed(12345)
 import tensorflow as tf
 tf.set_random_seed(12345)
-
-from sklearn.ensemble import RandomForestClassifier
+import preprocessing
 
 credits = pd.read_csv("dataset/tmdb_5000_credits.csv")
 movies = pd.read_csv("dataset/tmdb_5000_movies.csv")
+movies = preprocessing.includeProductionCompanies(movies)
+
 
 # Remove all nominal features
 movies = movies.drop(
     ["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview", "production_companies",
-     "production_countries", "spoken_languages", "status", "tagline", "title", "release_date"], axis=1)
+     "production_countries", "spoken_languages", "status", "tagline", "title", "release_date", 'revenue'], axis=1)
 
 # Get popularity values and remove them from the dataset
 y = movies["popularity"]

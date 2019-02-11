@@ -1,22 +1,28 @@
 import pandas as pd
 import numpy as np
+
+np.random.seed(12345)
+
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import cross_val_score
+import preprocessing
 
 # #############################################################################
 # Load data
 credits = pd.read_csv("dataset/tmdb_5000_credits.csv")
 movies = pd.read_csv("dataset/tmdb_5000_movies.csv")
+movies = preprocessing.includeProductionCompanies(movies)
 
 # Remove all nominal features
 movies = movies.drop(
     ["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview", "production_companies",
-     "production_countries", "spoken_languages", "status", "tagline", "title", "release_date"], axis=1)
+     "production_countries", "spoken_languages", "status", "tagline", "title", "release_date", 'revenue'], axis=1)
 
 # Get popularity values and remove them from the dataset
 y = movies["popularity"]
 movies = movies.drop(["popularity"], axis=1)
+print(movies.columns)
 
 # Select the random indexes for the test set and
 arr = np.arange(movies.shape[0])
