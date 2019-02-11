@@ -3,6 +3,9 @@ import numpy as np
 
 np.random.seed(12345)
 import tensorflow as tf
+tf.set_random_seed(12345)
+
+from sklearn.ensemble import RandomForestClassifier
 
 credits = pd.read_csv("dataset/tmdb_5000_credits.csv")
 movies = pd.read_csv("dataset/tmdb_5000_movies.csv")
@@ -21,7 +24,7 @@ arr = np.arange(movies.shape[0])
 index_test = np.random.choice(arr, int(0.25 * movies.shape[0]), replace=False)
 index_train = np.setdiff1d(arr, index_test)
 
-# Substitue NaN values with 0 #TODO it can be changed!
+# Substitute NaN values with 0 #TODO it can be changed!
 movies = movies.fillna(0)
 y = y.fillna(0)
 
@@ -51,16 +54,15 @@ y_train /= ymaxs
 y_test -= ymins
 y_test /= ymaxs
 
-print(x_train)
 
 # Train using 3 neurons in the hidden layer
 MLP = tf.keras.models.Sequential([
-    tf.keras.layers.Dense(3, activation='sigmoid', input_shape=(movies.shape[1],)),
+    tf.keras.layers.Dense(4, activation='sigmoid', input_shape=(movies.shape[1],)),
     tf.keras.layers.Dense(1, activation='linear')
 ])
 
 MLP.compile(optimizer=tf.keras.optimizers.Adadelta(0.001), loss="mse")
-MLP.fit(x_train, y_train, epochs=1)
+MLP.fit(x_train, y_train, epochs=10)
 
 # Return the loss on the test set
 print("Loss on the test set:", MLP.evaluate(x_test, y_test))
