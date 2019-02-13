@@ -2,6 +2,7 @@ import pandas as pd
 from sklearn.svm import SVR
 from sklearn.model_selection import cross_val_score
 import preprocessing
+from statistics import mean , stdev
 
 credits = preprocessing.load_tmdb_credits("dataset/tmdb_5000_credits.csv")
 movies = preprocessing.load_tmdb_movies("dataset/tmdb_5000_movies.csv")
@@ -47,16 +48,11 @@ svr_poly_3 = SVR(kernel='poly', C=1e3, degree=3, gamma='auto')
 # #############################################################################
 # Validate using cross-validation
 # See https://scikit-learn.org/stable/modules/model_evaluation.html
-print("\n\n")
-print('MSE RBF:')
 scores = cross_val_score(svr_rbf, movies, y, cv=5, scoring='neg_mean_squared_error')
-print(scores)
-print('MSE LINEAR:')
+print(f"MSE RBF: {mean(scores)}")
 scores = cross_val_score(svr_lin, movies, y, cv=5, scoring='neg_mean_squared_error')
-print(scores)
-print('MSE POLYNOMIAL (DEGREE=2):')
-scores = cross_val_score(svr_poly_2, movies, y, cv=5, scoring='neg_mean_squared_error')
-print(scores)
-print('MSE POLYNOMIAL (DEGREE=3):')
+print(f"MSE Linear: {mean(scores)}")
+cores = cross_val_score(svr_poly_2, movies, y, cv=5, scoring='neg_mean_squared_error')
+print(f"MSE POLYNOMIAL (DEGREE=2): {mean(scores)}")
 scores = cross_val_score(svr_poly_3, movies, y, cv=5, scoring='neg_mean_squared_error')
-print(scores)
+print(f"MSE POLYNOMIAL (DEGREE=3): {mean(scores)}")
