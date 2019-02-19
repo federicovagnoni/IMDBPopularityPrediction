@@ -29,7 +29,7 @@ arr = np.arange(movies.shape[0])
 index_test = np.random.choice(arr, int(0.25 * movies.shape[0]), replace=False)
 index_train = np.setdiff1d(arr, index_test)
 
-# Substitue NaN values with 0
+# Substitute NaN values with 0
 movies = movies.fillna(0)
 y = y.fillna(0)
 

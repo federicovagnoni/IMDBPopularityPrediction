@@ -2,13 +2,72 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import json
 import numpy as np
-from sklearn.preprocessing import Imputer
+np.random.seed(12345)
+from sklearn.impute import SimpleImputer
 
-np.random.seed(0)
 
 import seaborn as sns
 sns.set()
 
+def genresAnalysis(df):
+    liste_genres = set()
+    for s in df['genres'].str.split('|'):
+        liste_genres = set().union(s, liste_genres)
+    liste_genres = list(liste_genres)
+    liste_genres.remove('')
+
+    df_reduced = df[
+        ['title', 'vote_average', 'release_date', 'runtime', 'budget', 'revenue', 'popularity']].reset_index(drop=True)
+
+    for genre in liste_genres:
+        df_reduced[genre] = df['genres'].str.contains(genre).apply(lambda x: 1 if x else 0)
+    df_reduced[:5]
+
+    mean_per_genre = pd.DataFrame(liste_genres)
+
+    # Mean votes average
+    newArray = [] * len(liste_genres)
+    for genre in liste_genres:
+        newArray.append(df_reduced.groupby(genre, as_index=True)['vote_average'].mean())
+    newArray2 = [] * len(liste_genres)
+    for i in range(len(liste_genres)):
+        newArray2.append(newArray[i][1])
+
+    mean_per_genre['mean_votes_average'] = newArray2
+
+    # Mean budget
+    newArray = [] * len(liste_genres)
+    for genre in liste_genres:
+        newArray.append(df_reduced.groupby(genre, as_index=True)['budget'].mean())
+    newArray2 = [] * len(liste_genres)
+    for i in range(len(liste_genres)):
+        newArray2.append(newArray[i][1])
+
+    mean_per_genre['mean_budget'] = newArray2
+
+    # Mean revenue
+    newArray = [] * len(liste_genres)
+    for genre in liste_genres:
+        newArray.append(df_reduced.groupby(genre, as_index=True)['revenue'].mean())
+    newArray2 = [] * len(liste_genres)
+    for i in range(len(liste_genres)):
+        newArray2.append(newArray[i][1])
+
+    mean_per_genre['mean_revenue'] = newArray2
+
+    # Mean popularity
+    newArray = [] * len(liste_genres)
+    for genre in liste_genres:
+        newArray.append(df_reduced.groupby(genre, as_index=True)['popularity'].mean())
+    newArray2 = [] * len(liste_genres)
+    for i in range(len(liste_genres)):
+        newArray2.append(newArray[i][1])
+
+    mean_per_genre['mean_popularity'] = newArray2
+
+    mean_per_genre['profit'] = mean_per_genre['mean_revenue'] - mean_per_genre['mean_budget']
+
+    print(mean_per_genre.sort_values('mean_popularity', ascending=False))
 
 def includeProductionCompanies(movies):
     companiesList = dict()
@@ -41,7 +100,7 @@ def includeProductionCompanies(movies):
 
 
 def convertGenres(movies):
-    movies['genres'] = movies['genres'].apply(pipe_flatten_names)
+    #movies['genres'] = movies['genres'].apply(pipe_flatten_names)
 
     liste_genres = set()
     for s in movies['genres'].str.split('|'):
@@ -55,11 +114,11 @@ def convertGenres(movies):
     return movies
 
 def convertRuntime(movies):
-    my_imputer = Imputer()
+    my_imputer = SimpleImputer()
     X2 = my_imputer.fit_transform(movies[['runtime']])
     movies['runtime'] = X2
 
-    movies['runtime'] = pd.cut(movies['runtime'], [0, 75, 338], labels=['low', 'high'])
+    movies['runtime'] = pd.cut(movies['runtime'], [0, 75, movies['runtime'].describe()['max']], labels=['low', 'high'])
 
     for length in ["low", "high"]:
         movies[length] = movies['runtime'].str.contains(length).apply(lambda x: 1 if x else 0)
@@ -72,6 +131,7 @@ def load_tmdb_movies(path):
     json_columns = ['genres', 'keywords', 'production_countries', 'production_companies', 'spoken_languages']
     for column in json_columns:
         df[column] = df[column].apply(json.loads)
+    df['genres'] = df['genres'].apply(pipe_flatten_names)
     return df
 
 def load_tmdb_credits(path):
@@ -85,12 +145,27 @@ def load_tmdb_credits(path):
 def pipe_flatten_names(keywords):
     return '|'.join([x['name'] for x in keywords])
 
+
+def cleaningAndConvertion(movies):
+    movies = convertGenres(movies)
+
+    movies = convertRuntime(movies)
+
+    movies = includeProductionCompanies(movies)
+
+    movies = movies.drop(
+        ["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview",
+         "production_companies", "production_countries", "spoken_languages", "status", "tagline", "title",
+         "release_date", "runtime"], axis=1)
+
+    return movies
+
+
 if __name__ == "__main__":
     # #########
     # Load data
     credits = load_tmdb_credits("dataset/tmdb_5000_credits.csv")
     movies = load_tmdb_movies("dataset/tmdb_5000_movies.csv")
-
 
     movies = convertGenres(movies)
 
