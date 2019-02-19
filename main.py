@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 credits = preprocessing.load_tmdb_credits("dataset/tmdb_5000_credits.csv")
 movies = preprocessing.load_tmdb_movies("dataset/tmdb_5000_movies.csv")
-movies = preprocessing.includeProductionCompanies(movies)
+# movies = preprocessing.includeProductionCompanies(movies)
 
 
 # Remove all nominal features

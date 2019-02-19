@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 
 np.random.seed(12345)
@@ -11,8 +10,8 @@ import preprocessing
 # #############################################################################
 # Load data
 credits = preprocessing.load_tmdb_credits("dataset/tmdb_5000_credits.csv")
-movies = preprocessing.load_tmdb_movies("dataset/tmdb_5000_movies.csv")
-movies = preprocessing.includeProductionCompanies(movies)
+movies = preprocessing.load_tmdb_movies("dataset/movies.csv")
+#movies = preprocessing.includeProductionCompanies(movies)
 
 # Remove all nominal features
 movies = movies.drop(
@@ -22,7 +21,6 @@ movies = movies.drop(
 # Get popularity values and remove them from the dataset
 y = movies["popularity"]
 movies = movies.drop(["popularity"], axis=1)
-print(movies.columns)
 
 # Select the random indexes for the test set and
 arr = np.arange(movies.shape[0])
@@ -62,11 +60,10 @@ y_test /= ymaxs
 regr = RandomForestRegressor(max_depth=2, random_state=0, n_estimators=100)
 regr.fit(x_train, y_train)
 
-print(regr.feature_importances_)
 mse = mean_squared_error(y_test, regr.predict(x_test))
 print("MSE: %.4f" % mse)
 
-# #############################################################################
+# ####################cross_val_score#########################################################
 # Validate using cross-validation
 movies = movies.fillna(0)
 regr = RandomForestRegressor(max_depth=2, random_state=0, n_estimators=100)
