@@ -173,8 +173,30 @@ def insertCast(movies):
                       right_on=['movie_title'])
 
     movies = movies.drop(['movie_title'], axis=1)
-    print(movies.describe())
-    print(movies.head())
+
+    my_imputer = SimpleImputer()
+    X2 = my_imputer.fit_transform(movies[['actor_1_facebook_likes']])
+    movies['actor_1_facebook_likes'] = X2
+
+    my_imputer = SimpleImputer()
+    X2 = my_imputer.fit_transform(movies[['actor_2_facebook_likes']])
+    movies['actor_2_facebook_likes'] = X2
+
+    my_imputer = SimpleImputer()
+    X2 = my_imputer.fit_transform(movies[['actor_3_facebook_likes']])
+    movies['actor_3_facebook_likes'] = X2
+
+    my_imputer = SimpleImputer()
+    X2 = my_imputer.fit_transform(movies[['director_facebook_likes']])
+    movies['director_facebook_likes'] = X2
+
+    my_imputer = SimpleImputer()
+    X2 = my_imputer.fit_transform(movies[['movie_facebook_likes']])
+    movies['movie_facebook_likes'] = X2
+
+    my_imputer = SimpleImputer()
+    X2 = my_imputer.fit_transform(movies[['cast_total_facebook_likes']])
+    movies['cast_total_facebook_likes'] = X2
 
     movies.to_csv("dataset/movies.csv", index=False)
     return movies
@@ -266,17 +288,17 @@ def includeProductionCountries(movies):
 
 
 def preProcess(movies, meta, credits):
-    movies = convertGenres(movies)
+    # movies = convertGenres(movies)
     # movies = convertRuntime(movies)
     movies = includeProductionCompanies(movies)
-    movies = includeProductionCountries(movies)
+    # movies = includeProductionCountries(movies)
     del credits['title']
     del credits['movie_id']
     movies = pd.concat([movies, credits], axis=1)
-    movies = castClustering(meta, movies)
+    # movies = castClustering(meta, movies)
     del movies['cast']
     del movies['crew']
-    del movies["actor_0"]
+    # del movies["actor_0"]
     movies = insertCast(movies)
     return movies
 

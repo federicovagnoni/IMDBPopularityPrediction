@@ -6,11 +6,12 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import cross_val_score
 import preprocessing
+import matplotlib.pyplot as plt
 
 # #############################################################################
 # Load data
 credits = preprocessing.load_tmdb_credits("dataset/tmdb_5000_credits.csv")
-movies = preprocessing.load_tmdb_movies("dataset/movies.csv")
+movies = preprocessing.load_tmdb_movies("dataset/tmdb_5000_movies.csv")
 meta = pd.read_csv("dataset/movie_metadata.csv")
 movies = preprocessing.preProcess(movies, meta, credits)
 
@@ -61,8 +62,17 @@ y_test /= ymaxs
 regr = RandomForestRegressor(max_depth=2, random_state=0, n_estimators=100)
 regr.fit(x_train, y_train)
 
-mse = mean_squared_error(y_test, regr.predict(x_test))
+y_pred = regr.predict(x_test)
+
+mse = mean_squared_error(y_test, y_pred)
 print("MSE: %.4f" % mse)
+
+plt.plot(np.arange(len(y_test)), y_test, color='red', label='Real data')
+plt.plot(np.arange(len(y_test)), y_pred, color='blue', label='Predicted data')
+plt.title('Prediction')
+plt.legend()
+plt.show()
+plt.close()
 
 # ####################cross_val_score#########################################################
 # Validate using cross-validation
