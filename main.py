@@ -14,8 +14,8 @@ import preprocessing
 
 credits = preprocessing.load_tmdb_credits("dataset/tmdb_5000_credits.csv")
 movies = preprocessing.load_tmdb_movies("dataset/tmdb_5000_movies.csv")
-# movies = preprocessing.includeProductionCompanies(movies)
-
+meta = pd.read_csv("dataset/movie_metadata.csv")
+movies = preprocessing.preProcess(movies, meta, credits)
 
 # Remove all nominal features
 movies = movies.drop(

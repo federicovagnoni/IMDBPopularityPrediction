@@ -1,5 +1,5 @@
 import numpy as np
-
+import pandas as pd
 np.random.seed(12345)
 
 from sklearn.ensemble import RandomForestRegressor
@@ -11,7 +11,8 @@ import preprocessing
 # Load data
 credits = preprocessing.load_tmdb_credits("dataset/tmdb_5000_credits.csv")
 movies = preprocessing.load_tmdb_movies("dataset/movies.csv")
-#movies = preprocessing.includeProductionCompanies(movies)
+meta = pd.read_csv("dataset/movie_metadata.csv")
+movies = preprocessing.preProcess(movies, meta, credits)
 
 # Remove all nominal features
 movies = movies.drop(
@@ -65,10 +66,10 @@ print("MSE: %.4f" % mse)
 
 # ####################cross_val_score#########################################################
 # Validate using cross-validation
-movies = movies.fillna(0)
-regr = RandomForestRegressor(max_depth=2, random_state=0, n_estimators=100)
-regr.fit(x_train, y_train)
-
-scores = cross_val_score(regr, movies, y, cv=5, scoring='neg_mean_squared_error')
-print("Cross validation with 5 groups")
-print(scores)
+# movies = movies.fillna(0)
+# regr = RandomForestRegressor(max_depth=2, random_state=0, n_estimators=100)
+# regr.fit(x_train, y_train)
+#
+# scores = cross_val_score(regr, movies, y, cv=5, scoring='neg_mean_squared_error')
+# print("Cross validation with 5 groups")
+# print(scores)

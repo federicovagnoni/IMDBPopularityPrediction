@@ -205,7 +205,10 @@ def castClustering(meta, movies):
 
     # fig = plt.figure()
     # ax = Axes3D(fig)
-    # ax.scatter(df['facebook_lies'].values, df['popularity'].values)
+    # ax.scatter(df['facebook_likes'].values, df['popularity'].values, df['movies_number'].values)
+    # ax.set_xlabel("facebook")
+    # ax.set_ylabel("popularity")
+    # ax.set_zlabel("movies_number")
     # plt.show()
 
     df_min = df.min()
@@ -247,21 +250,34 @@ def castClustering(meta, movies):
     return movies
 
 
-# meta['movie_title'] = meta['movie_title'].apply(lambda x: x.strip())
-# meta = meta[['movie_title', 'actor_1_facebook_likes', 'actor_2_facebook_likes', 'actor_3_facebook_likes',
-#              'director_facebook_likes', 'movie_facebook_likes', 'cast_total_facebook_likes']]
+def includeProductionCountries(movies):
+    array = []
+    for index, row in movies.iterrows():
+        if len(row['production_countries']) != 0:
+            h = row['production_countries'][0]['iso_3166_1']
+            movies.at[index, 'production_countries'] = h
+            if h not in array:
+                array.append(h)
+
+    for c in array:
+        movies[c] = movies['production_countries'].str.contains(c).apply(lambda x: 1 if x else 0)
+
+    return movies
+
 
 def preProcess(movies, meta, credits):
-    # movies = convertGenres(movies)
+    movies = convertGenres(movies)
     # movies = convertRuntime(movies)
-    # movies = includeProductionCompanies(movies)
-
+    movies = includeProductionCompanies(movies)
+    movies = includeProductionCountries(movies)
     del credits['title']
     del credits['movie_id']
     movies = pd.concat([movies, credits], axis=1)
     movies = castClustering(meta, movies)
-
-
+    del movies['cast']
+    del movies['crew']
+    del movies["actor_0"]
+    movies = insertCast(movies)
     return movies
 
 
@@ -288,7 +304,12 @@ if __name__ == "__main__":
     movies = load_tmdb_movies("dataset/tmdb_5000_movies.csv")
     meta = pd.read_csv("dataset/movie_metadata.csv")
 
-    preProcess(movies, meta, credits)
+    print(movies['production_countries'].head(100))
+
+    # prod_co = pd.get_dummies(prod_co, prefix='')
+    # print(prod_co.head())
+
+    # movies = preProcess(movies, meta, credits)
 
     # # ####################
     # # Popularity Histogram
