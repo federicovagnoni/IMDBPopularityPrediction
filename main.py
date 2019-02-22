@@ -14,60 +14,13 @@ import preprocessing
 
 credits = preprocessing.load_tmdb_credits("dataset/tmdb_5000_credits.csv")
 movies = preprocessing.load_tmdb_movies("dataset/tmdb_5000_movies.csv")
-metadata = pd.read_csv("dataset/movie_metadata.csv")
-#movies = preprocessing.includeProductionCompanies(movies)
-
-del credits['title']
-del credits['movie_id']
-
-del metadata['genres']
-del metadata['budget']
-
-#print("METADATA")
-
-#for name in metadata.columns.values:
-#    if name in movies.columns.values:
-#        print(name)
-
-#print(metadata['movie_title'].head())
-#print(movies['title'].head())
-
-# metadata['movie_title'] = metadata['movie_title'].apply(lambda x: x.strip())
-# movies['title'] = movies['title'].apply(lambda x: x.strip())
-#
-# movies = pd.merge(movies, metadata.drop_duplicates(subset=['movie_title']), how='left', left_on=['title'], right_on=['movie_title'])
-#
-# my_imputer = SimpleImputer()
-# X2 = my_imputer.fit_transform(movies[['movie_facebook_likes']])
-# movies['movie_facebook_likes'] = X2
-#
-# X2 = my_imputer.fit_transform(movies[['director_facebook_likes']])
-# movies['director_facebook_likes'] = X2
-#
-# X2 = my_imputer.fit_transform(movies[['actor_1_facebook_likes']])
-# movies['actor_1_facebook_likes'] = X2
-#
-# X2 = my_imputer.fit_transform(movies[['actor_2_facebook_likes']])
-# movies['actor_2_facebook_likes'] = X2
-#
-# X2 = my_imputer.fit_transform(movies[['actor_3_facebook_likes']])
-# movies['actor_3_facebook_likes'] = X2
+# movies = preprocessing.includeProductionCompanies(movies)
 
 
-
-#preprocessing.genresAnalysis(movies)
-
-#fig = plt.figure(figsize = (10,15))
-#ax = fig.gca()
-#movies.hist(ax=ax)
-#plt.show()
-
-#movies = preprocessing.cleaningAndConvertion(movies)
+# Remove all nominal features
 movies = movies.drop(
-        ["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview",
-         "production_companies", "production_countries", "spoken_languages", "status", "tagline", "title",
-         "release_date", "runtime"], axis=1)
-
+    ["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview", "production_companies",
+     "production_countries", "spoken_languages", "status", "tagline", "title", "release_date"], axis=1)
 
 # Get popularity values and remove them from the dataset
 y = movies["popularity"]
