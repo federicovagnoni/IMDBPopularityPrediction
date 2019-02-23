@@ -83,46 +83,57 @@ best_c_rbf = 10
 best_c_lin = 10
 best_c_poly = 10
 
+best_e_poly = 10
+best_e_lin = 10
+best_e_rbf = 10
+
+
 best_rbf = ""
 best_lin = ""
 best_poly = ""
 
-for c in [1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1, 1e1, 1e2, 1e3, 1e4]:
+for c in [1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 1, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6]:
+    for e in [1e-3, 5e-2, 1e-2, 1e-1, 1]:
+        print("Trying with c = " + str(c) + " and e = " + str(e))
 
-    svr_rbf = SVR(kernel='rbf', C=c, gamma='auto')
-    svr_lin = SVR(kernel='linear', C=c, gamma='auto')
-    svr_poly_2 = SVR(kernel='poly', C=c, degree=2, gamma='auto')
-    #svr_poly_3 = SVR(kernel='poly', C=c, degree=3, gamma='auto')
+        svr_rbf = SVR(kernel='rbf', C=c, gamma='auto', epsilon=e, max_iter=10000)
+        svr_lin = SVR(kernel='linear', C=c, gamma='auto', epsilon=e, max_iter=10000)
 
-    svr_rbf.fit(x_train, y_train)
-    y_rbf = svr_rbf.predict(x_test)
+        svr_poly_2 = SVR(kernel='poly', C=c, degree=2, gamma='auto', epsilon=e, max_iter=10000)
+        svr_poly_2.fit(x_train, y_train)
+        y_poly = svr_poly_2.predict(x_test)
 
-    mse_rbf = mean_squared_error(y_test, y_rbf)
+        mse_poly = mean_squared_error(y_test, y_poly)
 
-    svr_lin.fit(x_train, y_train)
-    y_lin = svr_lin.predict(x_test)
+        if mse_poly < best_mse_poly:
+            best_mse_poly = mse_poly
+            best_c_poly = c
+            best_poly = svr_poly_2
+            best_e_poly = e
 
-    mse_lin = mean_squared_error(y_test, y_lin)
+        #svr_poly_3 = SVR(kernel='poly', C=c, degree=3, gamma='auto')
 
-    svr_poly_2.fit(x_train, y_train)
-    y_poly = svr_poly_2.predict(x_test)
+        svr_rbf.fit(x_train, y_train)
+        y_rbf = svr_rbf.predict(x_test)
 
-    mse_poly = mean_squared_error(y_test, y_poly)
+        mse_rbf = mean_squared_error(y_test, y_rbf)
 
-    if mse_poly < best_mse_poly:
-        best_mse_poly = mse_poly
-        best_c_poly = c
-        best_poly = svr_poly_2
+        svr_lin.fit(x_train, y_train)
+        y_lin = svr_lin.predict(x_test)
 
-    if mse_rbf < best_mse_rbf:
-        best_mse_rbf = mse_rbf
-        best_c_rbf = c
-        best_rbf = svr_rbf
+        mse_lin = mean_squared_error(y_test, y_lin)
 
-    if mse_lin < best_mse_lin:
-        best_mse_lin = mse_lin
-        best_c_lin = c
-        best_lin = svr_lin
+        if mse_rbf < best_mse_rbf:
+            best_mse_rbf = mse_rbf
+            best_c_rbf = c
+            best_rbf = svr_rbf
+            best_e_rbf = e
+
+        if mse_lin < best_mse_lin:
+            best_mse_lin = mse_lin
+            best_c_lin = c
+            best_lin = svr_lin
+            best_e_lin = e
 
 plt.scatter(y_test, y_test, s=30, label="Real popularity")
 plt.scatter(y_test, best_poly.predict(x_test), s=30, c='r', label="Predicted popularity")
@@ -143,9 +154,9 @@ plt.legend(loc=2)
 plt.show()
 
 
-print("\nBest SVM LINEAR, mse: " + str(best_mse_lin) + " with C = " + str(best_c_lin))
-print("Best SVM POLYNOMIAL, mse: " + str(best_mse_poly) + " with C = " + str(best_c_poly))
-print("Best SVM RBF, mse: " + str(best_mse_rbf) + " with C = " + str(best_c_rbf) + "\n")
+print("\nBest SVM LINEAR, mse: " + str(best_mse_lin) + " with C = " + str(best_c_lin) + " and epsilon = " + str(best_e_lin))
+print("Best SVM POLYNOMIAL, mse: " + str(best_mse_poly) + " with C = " + str(best_c_poly) + " and epsilon = " + str(best_e_poly))
+print("Best SVM RBF, mse: " + str(best_mse_rbf) + " with C = " + str(best_c_rbf) + " and epsilon = " + str(best_e_rbf) + "\n")
 
 
 def rmse(predictions, targets):
@@ -154,11 +165,11 @@ def rmse(predictions, targets):
 
 print("Linear")
 print("Mean squared error: %.6f"
-      % mean_squared_error(y_test, y_lin))
+      % mean_squared_error(y_test, best_lin.predict(x_test)))
 print("Root mean squared error: %.6f"
-      % rmse(y_test, y_lin))
+      % rmse(y_test, best_lin.predict(x_test)))
 print("Mean absolute error: %.6f"
-      % mean_absolute_error(y_test, y_lin))
+      % mean_absolute_error(y_test, best_lin.predict(x_test)))
 
 plt.plot(np.arange(len(y_test)), y_test, color='red', label='Real data')
 plt.plot(np.arange(len(y_test)), best_lin.predict(x_test), color='blue', label='Predicted data')
@@ -170,11 +181,11 @@ plt.close()
 
 print("\nPolynomial n=2")
 print("Mean squared error: %.6f"
-      % mean_absolute_error(y_test, y_poly))
+      % mean_absolute_error(y_test, best_poly.predict(x_test)))
 print("Root mean squared error: %.6f"
-      % rmse(y_test, y_poly))
+      % rmse(y_test, best_poly.predict(x_test)))
 print("Mean absolute error: %.6f"
-      % mean_absolute_error(y_test, y_poly))
+      % mean_absolute_error(y_test, best_poly.predict(x_test)))
 
 plt.plot(np.arange(len(y_test)), y_test, color='red', label='Real data')
 plt.plot(np.arange(len(y_test)), best_poly.predict(x_test), color='blue', label='Predicted data')
@@ -186,11 +197,11 @@ plt.close()
 
 print("\nRBF")
 print("Mean squared error: %.6f"
-      % mean_squared_error(y_test, y_rbf))
+      % mean_squared_error(y_test, best_rbf.predict(x_test)))
 print("Root mean squared error: %.6f"
-      % rmse(y_test, y_rbf))
+      % rmse(y_test, best_rbf.predict(x_test)))
 print("Mean absolute error: %.6f"
-      % mean_absolute_error(y_test, y_rbf))
+      % mean_absolute_error(y_test, best_rbf.predict(x_test)))
 
 plt.plot(np.arange(len(y_test)), y_test, color='red', label='Real data')
 plt.plot(np.arange(len(y_test)), best_rbf.predict(x_test), color='blue', label='Predicted data')
