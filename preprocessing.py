@@ -1,18 +1,17 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-import sklearn
-from mpl_toolkits.mplot3d import Axes3D
-
 import json
+from sklearn.model_selection import train_test_split
 import numpy as np
+import pandas as pd
+import sklearn
+
 np.random.seed(0)
 from sklearn.impute import SimpleImputer
 from sklearn.cluster import KMeans
 
-
 import seaborn as sns
 
 sns.set()
+
 
 def genresAnalysis(df):
     liste_genres = set()
@@ -74,51 +73,62 @@ def genresAnalysis(df):
 
     print(mean_per_genre.sort_values('mean_popularity', ascending=False))
 
-def analyzeActors():
-    df = pd.read_csv("./dataset/movies_metadata.csv")
 
-
-def includeProductionCompanies(movies):
+def includeProductionCompanies(movies_train, movies_test):
+    # Learn the company score from the training test
     companiesList = dict()
-    for index, row in movies.iterrows():
-        companies = row['production_companies']
-        # companiesJson = json.loads(companies)
+    for index, row in movies_train.iterrows():
+        companies = movies_train.loc[index, 'production_companies']
         for c in companies:
             if c['name'] in companiesList.keys():
-                companiesList[c['name']][0] += row['popularity']
+                companiesList[c['name']][0] += movies_train.loc[index, 'popularity']
                 companiesList[c['name']][1] += 1
             else:
-                companiesList[c['name']] = [row['popularity'], 1]
+                companiesList[c['name']] = [movies_train.loc[index, 'popularity'], 1]
 
     # Compute mean
     for e in companiesList.keys():
         companiesList[e] = companiesList[e][0] / companiesList[e][1]
 
-    movies['companies_popularity'] = 0
-    for index, row in movies.iterrows():
-        companies = row['production_companies']
-        # companiesJson = json.loads(companies)
+    movies_train = movies_train.copy()
+    movies_test = movies_test.copy()
+
+    movies_train.loc[:, 'companies_popularity'] = 0
+    movies_test.loc[:, 'companies_popularity'] = 0
+
+    # Apply the company score to the training set
+    for index, row in movies_train.iterrows():
+        companies = movies_train.loc[index, 'production_companies']
         names = [c['name'] for c in companies]
         for company in names:
-            if companiesList[company] > movies.at[index, 'companies_popularity']:
-                movies.at[index, 'companies_popularity'] = companiesList[company]
+            if companiesList[company] > movies_train.loc[index, 'companies_popularity']:
+                movies_train.loc[index, 'companies_popularity'] = companiesList[company]
 
-    # print(movies['companies_popularity'].describe())
-    # movies.to_csv('./dataset/movies_companies.csv', index=False)
-    return movies
+    # Apply the company score to the test set
+    for index, row in movies_test.iterrows():
+        companies = movies_test.loc[index, 'production_companies']
+        names = [c['name'] for c in companies]
+        for company in names:
+            if company in companiesList:
+                if companiesList[company] > movies_test.loc[index, 'companies_popularity']:
+                    movies_test.loc[index, 'companies_popularity'] = companiesList[company]
+
+    my_imputer = SimpleImputer()
+    X2 = my_imputer.fit_transform(movies_test[['companies_popularity']])
+    movies_test['companies_popularity'] = X2
+
+    return movies_train, movies_test
 
 
 def convertGenres(movies):
-    #movies['genres'] = movies['genres'].apply(pipe_flatten_names)
-
     liste_genres = set()
     for s in movies['genres'].str.split('|'):
         liste_genres = set().union(s, liste_genres)
     liste_genres = list(liste_genres)
-    liste_genres.remove('')
 
     for genre in liste_genres:
-        movies[genre] = movies['genres'].str.contains(genre).apply(lambda x: 1 if x else 0)
+        if genre != '':
+            movies[genre] = movies['genres'].str.contains(genre).apply(lambda x: 1 if x else 0)
 
     return movies
 
@@ -159,9 +169,7 @@ def pipe_flatten_names(keywords):
     return '|'.join([x['name'] for x in keywords])
 
 
-def insertCast(movies):
-    meta = pd.read_csv("dataset/movie_metadata.csv")
-
+def insertCast(movies, meta):
     meta = meta.drop(['genres', 'budget'], axis=1)
 
     meta['movie_title'] = meta['movie_title'].apply(lambda x: x.strip())
@@ -198,11 +206,10 @@ def insertCast(movies):
     X2 = my_imputer.fit_transform(movies[['cast_total_facebook_likes']])
     movies['cast_total_facebook_likes'] = X2
 
-    movies.to_csv("dataset/movies.csv", index=False)
     return movies
 
 
-def castClustering(meta, movies):
+def castClustering(meta, movies_train, movies_test):
     meta = meta.drop(['genres', 'budget'], axis=1)
 
     directorDict = dict()
@@ -214,7 +221,7 @@ def castClustering(meta, movies):
         actorsDict[row['actor_2_name']] = [row['actor_3_facebook_likes'], 0, 0]
 
     keys = actorsDict.keys()
-    for index, row in movies.iterrows():
+    for index, row in movies_train.iterrows():
         actors = [x['name'] for x in row['cast']]
         for actor in actors:
             if actor in keys:
@@ -225,14 +232,6 @@ def castClustering(meta, movies):
     df.columns = ['facebook_likes', 'popularity', 'movies_number']
     df = df.fillna(0)
 
-    # fig = plt.figure()
-    # ax = Axes3D(fig)
-    # ax.scatter(df['facebook_likes'].values, df['popularity'].values, df['movies_number'].values)
-    # ax.set_xlabel("facebook")
-    # ax.set_ylabel("popularity")
-    # ax.set_zlabel("movies_number")
-    # plt.show()
-
     df_min = df.min()
     df_max = df.max()
     df -= df_min
@@ -241,7 +240,7 @@ def castClustering(meta, movies):
     # Convert DataFrame to matrix
     mat = df.values
     # Using sklearn
-    km = sklearn.cluster.KMeans(n_clusters=3)
+    km = KMeans(n_clusters=3)
     km.fit(mat)
     # Get cluster assignment labels
     labels = km.labels_
@@ -253,70 +252,79 @@ def castClustering(meta, movies):
     cluster_1 = results.loc[results['cluster'] == 1]['actor'].values
     cluster_2 = results.loc[results['cluster'] == 2]['actor'].values
 
-    movies['actor_0'] = 0
-    movies['actor_1'] = 0
-    movies['actor_2'] = 0
+    movies_train['actor_0'] = 0
+    movies_train['actor_1'] = 0
+    movies_train['actor_2'] = 0
 
-    for index, row in movies.iterrows():
+    for index, row in movies_train.iterrows():
         actors = [x['name'] for x in row['cast']]
         for actor in actors:
             if actor in cluster_0:
-                movies.at[index, 'actor_0'] = 1
+                movies_train.loc[index, 'actor_0'] = 1
                 continue
             if actor in cluster_1:
-                movies.at[index, 'actor_1'] = 1
+                movies_train.loc[index, 'actor_1'] = 1
                 continue
             if actor in cluster_2:
-                movies.at[index, 'actor_2'] = 1
+                movies_train.loc[index, 'actor_2'] = 1
 
-    return movies
+    movies_test['actor_0'] = 0
+    movies_test['actor_1'] = 0
+    movies_test['actor_2'] = 0
+
+    for index, row in movies_test.iterrows():
+        actors = [x['name'] for x in row['cast']]
+        for actor in actors:
+            if actor in cluster_0:
+                movies_test.loc[index, 'actor_0'] = 1
+                continue
+            if actor in cluster_1:
+                movies_test.loc[index, 'actor_1'] = 1
+                continue
+            if actor in cluster_2:
+                movies_test.loc[index, 'actor_2'] = 1
+
+    return movies_train, movies_test
 
 
-def includeProductionCountries(movies):
+def includeProductionCountries(movies_train, movies_test):
     array = []
-    for index, row in movies.iterrows():
+    for index, row in movies_train.iterrows():
         if len(row['production_countries']) != 0:
             h = row['production_countries'][0]['iso_3166_1']
-            movies.at[index, 'production_countries'] = h
+            movies_train.at[index, 'production_countries'] = h
             if h not in array:
                 array.append(h)
 
     for c in array:
-        movies[c] = movies['production_countries'].str.contains(c).apply(lambda x: 1 if x else 0)
+        movies_train[c] = movies_train['production_countries'].str.contains(c).apply(lambda x: 1 if x else 0)
+        movies_test[c] = movies_test['production_countries'].str.contains(c).apply(lambda x: 1 if x else 0)
 
-    return movies
-
-
-def preProcess(movies, meta, credits):
-    # movies = convertGenres(movies)
-    # movies = convertRuntime(movies)
-    movies = includeProductionCompanies(movies)
-    # movies = includeProductionCountries(movies)
-    del credits['title']
-    del credits['movie_id']
-    movies = pd.concat([movies, credits], axis=1)
-    # movies = castClustering(meta, movies)
-    del movies['cast']
-    del movies['crew']
-    # del movies["actor_0"]
-    movies = insertCast(movies)
-    return movies
+    return movies_train, movies_test
 
 
+def preProcess(movies_train, movies_test, meta):
+    movies_train = movies_train.copy()
+    movies_test = movies_test.copy()
+    # movies_train = convertGenres(movies_train)
+    # movies_test = convertGenres(movies_test)
 
-def cleaningAndConvertion(movies):
-    movies = convertGenres(movies)
+    movies_train, movies_test = includeProductionCompanies(movies_train, movies_test)
+    movies_train, movies_test = includeProductionCountries(movies_train, movies_test)
 
-    movies = convertRuntime(movies)
+    movies_train, movies_test = castClustering(meta, movies_train, movies_test)
+    movies_train = insertCast(movies_train, meta)
+    movies_test = insertCast(movies_test, meta)
 
-    movies = includeProductionCompanies(movies)
+    my_imputer = SimpleImputer()
+    X2 = my_imputer.fit_transform(movies_train[['runtime']])
+    movies_train['runtime'] = X2
 
-    movies = movies.drop(
-        ["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview",
-         "production_companies", "production_countries", "spoken_languages", "status", "tagline", "title",
-         "release_date", "runtime"], axis=1)
+    my_imputer = SimpleImputer()
+    X2 = my_imputer.fit_transform(movies_test[['runtime']])
+    movies_test['runtime'] = X2
 
-    return movies
+    return movies_train, movies_test
 
 
 if __name__ == "__main__":
@@ -325,28 +333,36 @@ if __name__ == "__main__":
     credits = load_tmdb_credits("dataset/tmdb_5000_credits.csv")
     movies = load_tmdb_movies("dataset/tmdb_5000_movies.csv")
     meta = pd.read_csv("dataset/movie_metadata.csv")
+    del credits['title']
+    movies = pd.concat([movies, credits], axis=1)
 
-    print(movies['production_countries'].head(100))
+    y = movies['popularity']
+    x_train, x_test, y_train, y_test = train_test_split(
+        movies, y, test_size=0.30, random_state=1234)
 
-    # prod_co = pd.get_dummies(prod_co, prefix='')
-    # print(prod_co.head())
+    preProcess(x_train, x_test, meta)
+# movies = movies.drop(['popularity'], axis=1)
 
-    # movies = preProcess(movies, meta, credits)
 
-    # # ####################
-    # # Popularity Histogram
-    # popularity = movies.popularity
-    # # print(popularity.describe())
-    # plt.hist(popularity, bins=100)
-    # plt.hist(movies['companies_popularity'], bins=100)
-    # plt.legend(["popularity", 'companies_popularity'])
-    # plt.show()
-    #
-    # f, ax = plt.subplots(figsize=(12, 9))
-    # corrmat = movies.corr()
-    # print(corrmat)
-    # cols = corrmat.index
-    # print(cols.values)
-    # sns.set(font_scale=1.25)
-    # hm = sns.heatmap(corrmat, annot=True, cmap='coolwarm')
-    # plt.show()
+# prod_co = pd.get_dummies(prod_co, prefix='')
+# print(prod_co.head())
+
+# movies = preProcess(movies, meta, credits)
+
+# # ####################
+# # Popularity Histogram
+# popularity = movies.popularity
+# # print(popularity.describe())
+# plt.hist(popularity, bins=100)
+# plt.hist(movies['companies_popularity'], bins=100)
+# plt.legend(["popularity", 'companies_popularity'])
+# plt.show()
+#
+# f, ax = plt.subplots(figsize=(12, 9))
+# corrmat = movies.corr()
+# print(corrmat)
+# cols = corrmat.index
+# print(cols.values)
+# sns.set(font_scale=1.25)
+# hm = sns.heatmap(corrmat, annot=True, cmap='coolwarm')
+# plt.show()
