@@ -51,7 +51,7 @@ for train_index, test_index in kf.split(movies):
     x_train = x_train.drop(["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview",
                             "production_companies", "production_countries", "spoken_languages", "status", "tagline",
                             "title",
-                            "release_date", 'popularity',  "cast", "crew",
+                            "release_date", 'popularity', "cast", "crew",
                             "movie_id"], axis=1)
 
     x_test = x_test.drop(["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview",

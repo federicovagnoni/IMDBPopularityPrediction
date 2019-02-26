@@ -120,17 +120,18 @@ def includeProductionCompanies(movies_train, movies_test):
     return movies_train, movies_test
 
 
-def convertGenres(movies):
+def convertGenres(movies_train, movies_test):
     liste_genres = set()
-    for s in movies['genres'].str.split('|'):
+    for s in movies_train['genres'].str.split('|'):
         liste_genres = set().union(s, liste_genres)
     liste_genres = list(liste_genres)
 
     for genre in liste_genres:
         if genre != '':
-            movies[genre] = movies['genres'].str.contains(genre).apply(lambda x: 1 if x else 0)
+            movies_train[genre] = movies_train['genres'].str.contains(genre).apply(lambda x: 1 if x else 0)
+            movies_test[genre] = movies_test['genres'].str.contains(genre).apply(lambda x: 1 if x else 0)
 
-    return movies
+    return movies_train, movies_test
 
 
 def convertRuntime(movies):
@@ -306,15 +307,14 @@ def includeProductionCountries(movies_train, movies_test):
 def preProcess(movies_train, movies_test, meta):
     movies_train = movies_train.copy()
     movies_test = movies_test.copy()
-    # movies_train = convertGenres(movies_train)
-    # movies_test = convertGenres(movies_test)
+    movies_train, movies_test = convertGenres(movies_train, movies_test)
 
-    # movies_train, movies_test = includeProductionCompanies(movies_train, movies_test)
-    # movies_train, movies_test = includeProductionCountries(movies_train, movies_test)
-    #
-    # movies_train, movies_test = castClustering(meta, movies_train, movies_test)
-    # movies_train = insertCast(movies_train, meta)
-    # movies_test = insertCast(movies_test, meta)
+    movies_train, movies_test = includeProductionCompanies(movies_train, movies_test)
+    movies_train, movies_test = includeProductionCountries(movies_train, movies_test)
+
+    movies_train, movies_test = castClustering(meta, movies_train, movies_test)
+    movies_train = insertCast(movies_train, meta)
+    movies_test = insertCast(movies_test, meta)
 
     my_imputer = SimpleImputer()
     X2 = my_imputer.fit_transform(movies_train[['runtime']])
@@ -323,6 +323,14 @@ def preProcess(movies_train, movies_test, meta):
     my_imputer = SimpleImputer()
     X2 = my_imputer.fit_transform(movies_test[['runtime']])
     movies_test['runtime'] = X2
+
+    my_imputer = SimpleImputer(missing_values=0)
+    X2 = my_imputer.fit_transform(movies_train[['budget']])
+    movies_train['budget'] = X2
+
+    my_imputer = SimpleImputer()
+    X2 = my_imputer.fit_transform(movies_test[['budget']])
+    movies_test['budget'] = X2
 
     return movies_train, movies_test
 
