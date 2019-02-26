@@ -26,14 +26,16 @@ x_train, x_test = preprocessing.preProcess(x_train, x_test, meta)
 # # Remove all nominal features
 x_train = x_train.drop(["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview",
                         "production_companies", "production_countries", "spoken_languages", "status", "tagline",
-                        "title",
-                        "release_date", "movie_id", "popularity", "cast", "crew"], axis=1)
+                        "title", "cast", "crew",
+                        "release_date", "movie_id", "popularity"], axis=1)
 
 x_test = x_test.drop(["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview",
                       "production_companies", "production_countries", "spoken_languages", "status", "tagline",
-                      "title",
-                      "release_date", "movie_id", "popularity", "cast", "crew"], axis=1)
+                      "title", "cast", "crew",
+                      "release_date", "movie_id", "popularity"], axis=1)
 
+print(x_train.describe())
+print(x_test.describe())
 
 # #############################################################################
 # Normalize (min-max-scaler)
@@ -42,8 +44,6 @@ xmaxs = x_train.max()
 ymins = y_train.min()
 ymaxs = y_train.max()
 
-print(x_train)
-print(x_test)
 x_train -= xmins
 x_train /= xmaxs
 
@@ -56,6 +56,8 @@ y_train /= ymaxs
 y_test -= ymins
 y_test /= ymaxs
 
+print(y_test.describe())
+print(y_train.describe())
 
 #############################################################################
 # Define model
