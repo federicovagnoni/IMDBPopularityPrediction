@@ -26,12 +26,12 @@ x_train, x_test = preprocessing.preProcess(x_train, x_test, meta)
 # # Remove all nominal features
 x_train = x_train.drop(["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview",
                         "production_companies", "production_countries", "spoken_languages", "status", "tagline",
-                        "title",
+                        "title", "cast", "crew",
                         "release_date", "movie_id", "popularity"], axis=1)
 
 x_test = x_test.drop(["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview",
                       "production_companies", "production_countries", "spoken_languages", "status", "tagline",
-                      "title",
+                      "title", "cast", "crew",
                       "release_date", "movie_id", "popularity"], axis=1)
 
 print(x_train.describe())

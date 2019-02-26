@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.impute import SimpleImputer
+from sklearn.model_selection import train_test_split
 
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
@@ -28,18 +29,9 @@ movies = pd.concat([movies, credits], axis=1)
 # plt.show()
 # plt.close()
 
-# Select the random indexes for the test set and
-arr = np.arange(movies.shape[0])
-index_test = np.random.choice(arr, int(0.25 * movies.shape[0]), replace=False)
-index_train = np.setdiff1d(arr, index_test)
-
-y = movies["popularity"]
-
-# Use the indexes to form the training and test sets
-x_test = movies.loc[index_test]
-y_test = y.loc[index_test]
-x_train = movies.loc[index_train]
-y_train = y.loc[index_train]
+y = movies['popularity']
+x_train, x_test, y_train, y_test = train_test_split(
+    movies, y, test_size=0.30, random_state=1234)
 
 x_train, x_test = preprocessing.preProcess(x_train, x_test, meta)
 
@@ -47,11 +39,13 @@ x_train, x_test = preprocessing.preProcess(x_train, x_test, meta)
 # Remove all nominal features
 x_train = x_train.drop(
     ["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview", "production_companies",
-     "production_countries", "spoken_languages", "status", "tagline", "title", "release_date", "popularity", "cast", "crew", "movie_id"], axis=1)
+     "production_countries", "spoken_languages", "status", "tagline", "title", "release_date", "popularity", "cast", "crew", "movie_id",
+     'revenue', 'vote_average', 'vote_count'], axis=1)
 
 x_test = x_test.drop(
     ["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview", "production_companies",
-     "production_countries", "spoken_languages", "status", "tagline", "title", "release_date", "popularity", "cast", "crew", "movie_id"], axis=1)
+     "production_countries", "spoken_languages", "status", "tagline", "title", "release_date", "popularity", "cast", "crew", "movie_id",
+     'revenue', 'vote_average', 'vote_count'], axis=1)
 
 print(x_test.columns.values)
 print(x_train.columns.values)
@@ -82,10 +76,10 @@ best_model = ""
 best_nodes = 1
 
 # Train using 3 neurons in the hidden layer
-for num_nodes in range(2, 10):
+for num_nodes in range(2, 26):
 
     MLP = tf.keras.models.Sequential([
-        tf.keras.layers.Dense(num_nodes, activation='sigmoid', input_shape=(movies.shape[1],)),
+        tf.keras.layers.Dense(num_nodes, activation='sigmoid', input_shape=(x_train.shape[1],)),
         # tf.keras.layers.Dense(3, activation='sigmoid'),
         tf.keras.layers.Dense(1, activation='linear')
     ])
