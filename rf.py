@@ -8,7 +8,6 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 
 import preprocessing
-import matplotlib.pyplot as plt
 
 # #############################################################################
 # Load data
@@ -64,7 +63,7 @@ y_test /= ymaxs
 best_mse = 1
 best_dept = 2
 for x in range(2, 20):
-    regr = RandomForestRegressor(max_depth=10, random_state=3, n_estimators=100, criterion='mse')
+    regr = RandomForestRegressor(max_depth=x, random_state=3, n_estimators=100, criterion='mse')
     regr.fit(x_train, y_train)
     y_pred = regr.predict(x_test)
 
