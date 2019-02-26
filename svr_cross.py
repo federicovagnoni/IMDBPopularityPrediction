@@ -2,7 +2,7 @@ from statistics import mean, stdev
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, ShuffleSplit
 from sklearn.svm import SVR
 
 import preprocessing
@@ -25,7 +25,7 @@ def rmse(predictions, targets):
 
 ## CROSS  VALIDATION
 
-kf = KFold(n_splits=10)
+kf = ShuffleSplit(n_splits=10, test_size=0.30, random_state=1234)
 kf.get_n_splits(movies)
 
 rmse_list = []
@@ -77,7 +77,7 @@ for train_index, test_index in kf.split(movies):
     y_test -= ymins
     y_test /= ymaxs
 
-    svr_lin = SVR(kernel='linear', C=1, gamma='auto', epsilon=0.001, max_iter=10000)
+    svr_lin = SVR(kernel='linear', C=0.1, gamma='auto', epsilon=0.001, max_iter=10000)
     svr_lin.fit(x_train, y_train)
     rmse_list.append(rmse(y_test, svr_lin.predict(x_test)))
 
