@@ -309,12 +309,12 @@ def preProcess(movies_train, movies_test, meta):
     # movies_train = convertGenres(movies_train)
     # movies_test = convertGenres(movies_test)
 
-    movies_train, movies_test = includeProductionCompanies(movies_train, movies_test)
-    movies_train, movies_test = includeProductionCountries(movies_train, movies_test)
-
-    movies_train, movies_test = castClustering(meta, movies_train, movies_test)
-    movies_train = insertCast(movies_train, meta)
-    movies_test = insertCast(movies_test, meta)
+    # movies_train, movies_test = includeProductionCompanies(movies_train, movies_test)
+    # movies_train, movies_test = includeProductionCountries(movies_train, movies_test)
+    #
+    # movies_train, movies_test = castClustering(meta, movies_train, movies_test)
+    # movies_train = insertCast(movies_train, meta)
+    # movies_test = insertCast(movies_test, meta)
 
     my_imputer = SimpleImputer()
     X2 = my_imputer.fit_transform(movies_train[['runtime']])

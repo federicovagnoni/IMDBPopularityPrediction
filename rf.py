@@ -1,10 +1,12 @@
 import numpy as np
 import pandas as pd
+
 np.random.seed(12345)
 
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import train_test_split
+
 import preprocessing
 import matplotlib.pyplot as plt
 
@@ -13,31 +15,31 @@ import matplotlib.pyplot as plt
 credits = preprocessing.load_tmdb_credits("dataset/tmdb_5000_credits.csv")
 movies = preprocessing.load_tmdb_movies("dataset/tmdb_5000_movies.csv")
 meta = pd.read_csv("dataset/movie_metadata.csv")
-movies = preprocessing.preProcess(movies, meta, credits)
+del credits['title']
+movies = pd.concat([movies, credits], axis=1)
 
-# Remove all nominal features
-movies = movies.drop(
-    ["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview", "production_companies",
-     "production_countries", "spoken_languages", "status", "tagline", "title", "release_date"], axis=1)
+y = movies['popularity']
+x_train, x_test, y_train, y_test = train_test_split(
+    movies, y, test_size=0.30, random_state=1)
 
-# Get popularity values and remove them from the dataset
-y = movies["popularity"]
-movies = movies.drop(["popularity"], axis=1)
+x_train, x_test = preprocessing.preProcess(x_train, x_test, meta)
 
-# Select the random indexes for the test set and
-arr = np.arange(movies.shape[0])
-index_test = np.random.choice(arr, int(0.25 * movies.shape[0]), replace=False)
-index_train = np.setdiff1d(arr, index_test)
+# # Remove all nominal features
+x_train = x_train.drop(["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview",
+                        "production_companies", "production_countries", "spoken_languages", "status", "tagline",
+                        "title",
+                        "release_date", 'cast', 'crew'], axis=1)
 
-# Substitute NaN values with 0
-movies = movies.fillna(0)
-y = y.fillna(0)
+x_test = x_test.drop(["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview",
+                      "production_companies", "production_countries", "spoken_languages", "status", "tagline",
+                      "title",
+                      "release_date", 'cast', 'crew'], axis=1)
 
-# Use the indexes to form the training and test sets
-x_test = movies.loc[index_test]
-y_test = y.loc[index_test]
-x_train = movies.loc[index_train]
-y_train = y.loc[index_train]
+print(x_train.describe())
+print(x_test.describe())
+
+y = movies['popularity']
+movies = movies.drop(['popularity'], axis=1)
 
 xmins = x_train.min()
 xmaxs = x_train.max()
@@ -59,27 +61,24 @@ y_test /= ymaxs
 # #############################################################################
 # Fit regression model
 
-regr = RandomForestRegressor(max_depth=2, random_state=0, n_estimators=100)
-regr.fit(x_train, y_train)
+best_mse = 1
+best_dept = 2
+for x in range(2, 20):
+    regr = RandomForestRegressor(max_depth=10, random_state=3, n_estimators=100, criterion='mse')
+    regr.fit(x_train, y_train)
+    y_pred = regr.predict(x_test)
 
-y_pred = regr.predict(x_test)
+    mse = mean_squared_error(y_test, y_pred)
+    print("MSE: %.4f" % mse)
 
-mse = mean_squared_error(y_test, y_pred)
-print("MSE: %.4f" % mse)
+    if mse < best_mse:
+        best_mse = mse
+        best_dept = x
 
-plt.plot(np.arange(len(y_test)), y_test, color='red', label='Real data')
-plt.plot(np.arange(len(y_test)), y_pred, color='blue', label='Predicted data')
-plt.title('Prediction')
-plt.legend()
-plt.show()
-plt.close()
-
-# ####################cross_val_score#########################################################
-# Validate using cross-validation
-# movies = movies.fillna(0)
-# regr = RandomForestRegressor(max_depth=2, random_state=0, n_estimators=100)
-# regr.fit(x_train, y_train)
-#
-# scores = cross_val_score(regr, movies, y, cv=5, scoring='neg_mean_squared_error')
-# print("Cross validation with 5 groups")
-# print(scores)
+print(best_dept, best_mse)
+# plt.plot(np.arange(len(y_test)), y_test, color='red', label='Real data')
+# plt.plot(np.arange(len(y_test)), y_pred, color='blue', label='Predicted data')
+# plt.title('Prediction')
+# plt.legend()
+# plt.show()
+# plt.close()

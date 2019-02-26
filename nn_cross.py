@@ -8,53 +8,39 @@ pd.set_option('display.width', 1000)
 
 np.random.seed(12345)
 import tensorflow as tf
-
 tf.set_random_seed(12345)
 import preprocessing
 import matplotlib.pyplot as plt
 import seaborn as sns
-
 sns.set()
+
 
 credits = preprocessing.load_tmdb_credits("dataset/tmdb_5000_credits.csv")
 movies = preprocessing.load_tmdb_movies("dataset/tmdb_5000_movies.csv")
 meta = pd.read_csv("dataset/movie_metadata.csv")
-del credits['title']
-movies = pd.concat([movies, credits], axis=1)
+movies = preprocessing.preProcess(movies, meta, credits)
 
 
-# corrmat = movies.corr()
-# hm = sns.heatmap(corrmat, annot=True, cmap='coolwarm')
-# plt.show()
-# plt.close()
+# Remove all nominal features
+movies = movies.drop(
+    ["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview", "production_companies",
+     "production_countries", "spoken_languages", "status", "tagline", "title", "release_date", "revenue", "vote_count", "vote_average"], axis=1)
+
+# Get popularity values and remove them from the dataset
+y = movies["popularity"]
+movies = movies.drop(["popularity"], axis=1)
 
 # Select the random indexes for the test set and
 arr = np.arange(movies.shape[0])
 index_test = np.random.choice(arr, int(0.25 * movies.shape[0]), replace=False)
 index_train = np.setdiff1d(arr, index_test)
 
-y = movies["popularity"]
 
 # Use the indexes to form the training and test sets
 x_test = movies.loc[index_test]
 y_test = y.loc[index_test]
 x_train = movies.loc[index_train]
 y_train = y.loc[index_train]
-
-x_train, x_test = preprocessing.preProcess(x_train, x_test, meta)
-
-
-# Remove all nominal features
-x_train = x_train.drop(
-    ["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview", "production_companies",
-     "production_countries", "spoken_languages", "status", "tagline", "title", "release_date", "popularity", "cast", "crew", "movie_id"], axis=1)
-
-x_test = x_test.drop(
-    ["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview", "production_companies",
-     "production_countries", "spoken_languages", "status", "tagline", "title", "release_date", "popularity", "cast", "crew", "movie_id"], axis=1)
-
-print(x_test.columns.values)
-print(x_train.columns.values)
 
 # Scale train and test set between 0 and 1 using the max and min values for each attribute the values for each
 # attribute are retrieved form the training set and these values will be used on the test set too (e.g. we do not use
@@ -81,12 +67,13 @@ best_mae = 100
 best_model = ""
 best_nodes = 1
 
+
 # Train using 3 neurons in the hidden layer
 for num_nodes in range(2, 10):
 
     MLP = tf.keras.models.Sequential([
         tf.keras.layers.Dense(num_nodes, activation='sigmoid', input_shape=(movies.shape[1],)),
-        # tf.keras.layers.Dense(3, activation='sigmoid'),
+        #tf.keras.layers.Dense(3, activation='sigmoid'),
         tf.keras.layers.Dense(1, activation='linear')
     ])
 
@@ -104,17 +91,18 @@ for num_nodes in range(2, 10):
 
 print("The best loss is for " + str(best_nodes) + " nodes with MSE: " + str(best_mse) + ", MAE: " + str(best_mae))
 
+
 y_pred = best_model.predict(x_test)
 
-# plt.rcParams['legend.numpoints'] = 1
-# fig, ax = plt.subplots(figsize=(6, 4))
-# for i in range(len(y_pred)):
+#plt.rcParams['legend.numpoints'] = 1
+#fig, ax = plt.subplots(figsize=(6, 4))
+#for i in range(len(y_pred)):
 #    ax.plot([i, i], [y_pred[i], y_test[i]], c="k", linewidth=0.5)
-# ax.plot(y_pred, 'o', label='Prediction', color='g')
-# ax.plot(y_test, '^', label='Ground Truth', color='r')
+#ax.plot(y_pred, 'o', label='Prediction', color='g')
+#ax.plot(y_test, '^', label='Ground Truth', color='r')
 
-plt.plot(np.arange(len(y_test)), y_test, color='red', label='Real data')
-plt.plot(np.arange(len(y_test)), y_pred, color='blue', label='Predicted data')
+plt.plot(np.arange(len(y_test)), y_test, color='red', label = 'Real data')
+plt.plot(np.arange(len(y_test)), y_pred, color='blue', label = 'Predicted data')
 plt.title('Prediction')
 plt.legend()
 plt.show()
