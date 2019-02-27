@@ -134,17 +134,25 @@ def convertGenres(movies_train, movies_test):
     return movies_train, movies_test
 
 
-def convertRuntime(movies):
+def convertRuntime(movies_train, movies_test):
     my_imputer = SimpleImputer()
-    X2 = my_imputer.fit_transform(movies[['runtime']])
-    movies['runtime'] = X2
+    X2 = my_imputer.fit_transform(movies_train[['runtime']])
+    movies_train['runtime'] = X2
 
-    movies['runtime'] = pd.cut(movies['runtime'], [0, 75, movies['runtime'].describe()['max']], labels=['low', 'high'])
+    X2 = my_imputer.fit_transform(movies_test[['runtime']])
+    movies_test['runtime'] = X2
 
-    for length in ["low", "high"]:
-        movies[length] = movies['runtime'].str.contains(length).apply(lambda x: 1 if x else 0)
+    max_train = movies_train['runtime'].describe()['max']
+    max_test = movies_test['runtime'].describe()['max']
+    movies_train['runtime'] = pd.cut(movies_train['runtime'], [0, 75, max_train], labels=['low', 'high'],
+                                     include_lowest=True)
+    movies_test['runtime'] = pd.cut(movies_test['runtime'], [0, 75, max_test], labels=['low', 'high'],
+                                    include_lowest=True)
 
-    return movies
+    movies_train['runtime'] = movies_train['runtime'].map({'high': 1, 'low': 0})
+    movies_test['runtime'] = movies_test['runtime'].map({'high': 1, 'low': 0})
+
+    return movies_train, movies_test
 
 
 def load_tmdb_movies(path):
@@ -307,6 +315,8 @@ def includeProductionCountries(movies_train, movies_test):
 def preProcess(movies_train, movies_test, meta):
     movies_train = movies_train.copy()
     movies_test = movies_test.copy()
+
+    movies_train, movies_test = convertRuntime(movies_train, movies_test)
     movies_train, movies_test = convertGenres(movies_train, movies_test)
 
     movies_train, movies_test = includeProductionCompanies(movies_train, movies_test)
@@ -315,14 +325,6 @@ def preProcess(movies_train, movies_test, meta):
     movies_train, movies_test = castClustering(meta, movies_train, movies_test)
     movies_train = insertCast(movies_train, meta)
     movies_test = insertCast(movies_test, meta)
-
-    my_imputer = SimpleImputer()
-    X2 = my_imputer.fit_transform(movies_train[['runtime']])
-    movies_train['runtime'] = X2
-
-    my_imputer = SimpleImputer()
-    X2 = my_imputer.fit_transform(movies_test[['runtime']])
-    movies_test['runtime'] = X2
 
     my_imputer = SimpleImputer(missing_values=0)
     X2 = my_imputer.fit_transform(movies_train[['budget']])

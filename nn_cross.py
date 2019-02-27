@@ -2,11 +2,21 @@ from statistics import mean, stdev
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import ShuffleSplit
+
+pd.set_option('display.max_rows', 500)
+pd.set_option('display.max_columns', 500)
+pd.set_option('display.width', 1000)
+
+np.random.seed(12345)
+import tensorflow as tf
+
+tf.set_random_seed(12345)
+import preprocessing
+import seaborn as sns
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
-import preprocessing
+sns.set()
 
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
@@ -24,9 +34,7 @@ def rmse(predictions, targets):
     return np.sqrt(((predictions - targets) ** 2).mean())
 
 
-#########################
-#  CROSS  VALIDATION    #
-#########################
+## CROSS  VALIDATION
 
 kf = ShuffleSplit(n_splits=10, test_size=0.30, random_state=1234)
 kf.get_n_splits(movies)
@@ -82,9 +90,15 @@ for train_index, test_index in kf.split(movies):
     y_test -= ymins
     y_test /= ymaxs
 
-    regr = RandomForestRegressor(max_depth=9, n_estimators=100, criterion='mse')
-    regr.fit(x_train, y_train)
-    y_pred = regr.predict(x_test)
+    MLP = tf.keras.models.Sequential([
+        tf.keras.layers.Dense(15, activation='sigmoid', input_shape=(x_train.shape[1],)),
+        # tf.keras.layers.Dense(3, activation='sigmoid'),
+        tf.keras.layers.Dense(1, activation='linear')
+    ])
+
+    MLP.compile(optimizer="adadelta", loss="mse", metrics=['mae'])
+    MLP.fit(x_train, y_train, epochs=10)
+    y_pred = MLP.predict(x_test)
 
     mse = mean_squared_error(y_test, y_pred)
     mse_list.append(mse)
@@ -92,8 +106,7 @@ for train_index, test_index in kf.split(movies):
     mae = mean_absolute_error(y_test, y_pred)
     mae_list.append(mae)
 
-    rmse_err = rmse(y_pred, y_test)
-    rmse_list.append(rmse_err)
+    rmse_list.append(np.sqrt((mse)))
 
 print("MSE Mean ", mean(mse_list))
 print("MSE stddev ", stdev(mse_list))
