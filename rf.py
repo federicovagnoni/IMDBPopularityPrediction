@@ -6,6 +6,7 @@ np.random.seed(12345)
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.model_selection import train_test_split
+from matplotlib import pyplot as plt
 
 import preprocessing
 
@@ -27,12 +28,12 @@ x_train, x_test = preprocessing.preProcess(x_train, x_test, meta)
 x_train = x_train.drop(["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview",
                         "production_companies", "production_countries", "spoken_languages", "status", "tagline",
                         "title", "popularity",
-                        "release_date", 'cast', 'crew'], axis=1)
+                        "release_date", 'cast', 'crew', 'vote_average', 'revenue'], axis=1)
 
 x_test = x_test.drop(["genres", "homepage", "id", "keywords", "original_language", "original_title", "overview",
                       "production_companies", "production_countries", "spoken_languages", "status", "tagline",
                       "title", "popularity",
-                      "release_date", 'cast', 'crew'], axis=1)
+                      "release_date", 'cast', 'crew', 'vote_average', 'revenue'], axis=1)
 
 print(x_train.describe())
 print(x_test.describe())
